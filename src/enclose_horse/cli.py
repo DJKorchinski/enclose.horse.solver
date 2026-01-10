@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--solver",
         choices=["ilp", "cp-sat"],
-        default="ilp",
+        default="cp-sat",
         help="Solver backend to use (default: ilp).",
     )
     return parser.parse_args()
@@ -26,11 +26,15 @@ def parse_args() -> argparse.Namespace:
 def main(args: Optional[argparse.Namespace] = None) -> int:
     ns = args or parse_args()
     map_data = parse_map_file(ns.map_path)
+
+    import time as _time
+    start_time = _time.time()
     if ns.solver == "cp-sat":
         result = solve_cp_sat(map_data, max_walls=ns.max_walls)
     else:
         result = solve_ilp(map_data, max_walls=ns.max_walls)
-
+    end_time = _time.time()
+    print(f"Solved in {end_time - start_time:.2f} seconds.")
     print(f"Status: {result.status}")
     print(f"Objective (score): {result.objective}")
     print(f"Walls used: {result.walls_used()} / {ns.max_walls}")
