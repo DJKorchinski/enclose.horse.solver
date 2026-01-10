@@ -143,7 +143,7 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
             model.Add(h >= reach_vars[u] + (1 - wall_vars[u]) + (1 - wall_vars[v]) - 2) 
         if helpers:
             model.Add(reach_vars[v] <= sum(helpers)) # v is not reachable if all helpers are false
-            for h in helpers:
+            for h in helpers: #and it is reachable if any helper is true
                 model.Add(reach_vars[v] >= h)
 
     cherry_bonus = sum(3 * reach_vars[c] for c in map_data.cherries)
