@@ -23,7 +23,7 @@ python -m enclose_horse.cli --map example_map.txt --max-walls 13 --plot solution
 
 ## Example Solution
 
-Portal map ([2026-01-10](https://enclose.horse/play/2026-01-09)) solved with 10 walls (score 94):
+Portal map ([2026-01-10](https://enclose.horse/play/2026-01-10)) solved with 10 walls (score 94):
 
 ![Portal solution](portal_solution.png)
 
