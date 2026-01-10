@@ -14,7 +14,7 @@ pip install -e .
 ## Usage
 
 ```bash
-python -m enclose_horse.cli --map example_map.txt --max-walls 13 --plot solution.png [--show]
+python -m enclose_horse.cli --map example_map.txt --max-walls 13 --plot solution.png [--show] [--solver cp-sat]
 ```
 
 ### CLI options
@@ -23,6 +23,7 @@ python -m enclose_horse.cli --map example_map.txt --max-walls 13 --plot solution
 - `--max-walls N`: wall budget (default: 13).
 - `--plot PATH`: save a rendered PNG of the solution.
 - `--show`: display the matplotlib window instead of/as well as saving.
+- `--solver {ilp,cp-sat}`: choose MILP (default) or CP-SAT backend.
 
 ## Example Solution
 

@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 from typing import Optional
 
+from .cp_sat_solver import solve_cp_sat
 from .ilp_solver import solve_ilp
 from .parser import parse_map_file
 from .viz import display_solution, save_solution_plot
@@ -13,13 +14,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-walls", type=int, default=13, help="Maximum walls available.")
     parser.add_argument("--plot", dest="plot_path", help="Optional path to save rendered solution PNG.")
     parser.add_argument("--show", action="store_true", help="Display the visualization in a window.")
+    parser.add_argument(
+        "--solver",
+        choices=["ilp", "cp-sat"],
+        default="ilp",
+        help="Solver backend to use (default: ilp).",
+    )
     return parser.parse_args()
 
 
 def main(args: Optional[argparse.Namespace] = None) -> int:
     ns = args or parse_args()
     map_data = parse_map_file(ns.map_path)
-    result = solve_ilp(map_data, max_walls=ns.max_walls)
+    if ns.solver == "cp-sat":
+        result = solve_cp_sat(map_data, max_walls=ns.max_walls)
+    else:
+        result = solve_ilp(map_data, max_walls=ns.max_walls)
 
     print(f"Status: {result.status}")
     print(f"Objective (score): {result.objective}")
