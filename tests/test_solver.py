@@ -1,73 +1,34 @@
 from pathlib import Path
 
-from enclose_horse.ilp_solver import solve_ilp
-from enclose_horse.cp_sat_solver import solve_cp_sat
-from enclose_horse.parser import parse_map_file
 from enclose_horse.cp_sat_solver import solve_cp_sat, solve_cp_sat_reachability
+from enclose_horse.ilp_solver import solve_ilp
+from enclose_horse.parser import parse_map_file
+
+ROOT = Path(__file__).resolve().parents[1]
+MAP_CASES = [
+    ("example_map.txt", 13, 103),
+    ("portal_map.txt", 10, 94),
+    ("cherry_map.txt", 12, 66),
+]
 
 
-def test_solver_finds_feasible_solution():
-    root = Path(__file__).resolve().parents[1]
-    map_data = parse_map_file(root / "example_map.txt")
-    result = solve_ilp(map_data, max_walls=13)
+def _assert_solver_hits_optimum(solver_fn):
+    for fname, walls, objective in MAP_CASES:
+        map_data = parse_map_file(ROOT / fname)
+        result = solver_fn(map_data, max_walls=walls)
 
-    assert result.status.lower() in {"optimal", "feasible"}
-    assert result.objective is not None and result.objective >= 1
-    assert result.walls_used() <= 13
-    assert result.pasture_tiles() >= 0
-
-
-def test_example_map_hits_known_optimum():
-    root = Path(__file__).resolve().parents[1]
-    map_data = parse_map_file(root / "example_map.txt")
-    result = solve_ilp(map_data, max_walls=13)
-
-    assert result.status.lower() == "optimal"
-    assert round(result.objective) == 103
-    assert result.walls_used() == 13
+        assert result.status.lower() in {"optimal", "feasible"}
+        assert round(result.objective) == objective
+        assert result.walls_used() <= walls
 
 
-def test_portal_map_hits_known_optimum():
-    root = Path(__file__).resolve().parents[1]
-    map_data = parse_map_file(root / "portal_map.txt")
-    result = solve_ilp(map_data, max_walls=10)
-
-    assert result.status.lower() == "optimal"
-    assert round(result.objective) == 94
-    assert result.walls_used() <= 10
-
-
-def test_cherry_map_hits_known_optimum():
-    root = Path(__file__).resolve().parents[1]
-    map_data = parse_map_file(root / "cherry_map.txt")
-    result = solve_ilp(map_data, max_walls=12)
-
-    assert result.status.lower() == "optimal"
-    assert round(result.objective) == 66
-    assert result.walls_used() <= 12
+def test_ilp_matches_optima():
+    _assert_solver_hits_optimum(solve_ilp)
 
 
 def test_cp_sat_matches_optima():
-    root = Path(__file__).resolve().parents[1]
-    for fname, walls, objective in [
-        ("example_map.txt", 13, 103),
-        ("portal_map.txt", 10, 94),
-        ("cherry_map.txt", 12, 66),
-    ]:
-        map_data = parse_map_file(root / fname)
-        result = solve_cp_sat(map_data, max_walls=walls)
-        assert result.status.lower() in {"optimal", "feasible"}
-        assert round(result.objective) == objective
+    _assert_solver_hits_optimum(solve_cp_sat)
 
 
 def test_cp_sat_reachability_matches_optima():
-    root = Path(__file__).resolve().parents[1]
-    for fname, walls, objective in [
-        ("example_map.txt", 13, 103),
-        ("portal_map.txt", 10, 94),
-        ("cherry_map.txt", 12, 66),
-    ]:
-        map_data = parse_map_file(root / fname)
-        result = solve_cp_sat_reachability(map_data, max_walls=walls)
-        assert result.status.lower() in {"optimal", "feasible"}
-        assert round(result.objective) == objective
+    _assert_solver_hits_optimum(solve_cp_sat_reachability)
