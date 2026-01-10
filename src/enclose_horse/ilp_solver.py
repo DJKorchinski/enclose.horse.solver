@@ -48,35 +48,25 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
 
     problem = pulp.LpProblem("horse_enclosure", pulp.LpMaximize)
 
-    states = ("grass", "pasture", "wall")
-    tile_vars: Dict[Coord, Dict[Assignment, pulp.LpVariable]] = {}
+    wall_vars: Dict[Coord, pulp.LpVariable] = {}
     inside_vars: Dict[Coord, pulp.LpVariable] = {}
 
     boundary_candidates = _boundary_coords(map_data, candidates)
 
     for r, c in candidates:
-        tile_vars[(r, c)] = {
-            state: pulp.LpVariable(f"b_{state}_{r}_{c}", lowBound=0, upBound=1, cat="Binary")
-            for state in states
-        }
+        wall_vars[(r, c)] = pulp.LpVariable(f"b_wall_{r}_{c}", lowBound=0, upBound=1, cat="Binary")
         inside_vars[(r, c)] = pulp.LpVariable(f"x_inside_{r}_{c}", lowBound=0, upBound=1, cat="Binary")
 
-        # Each tile must pick exactly one state.
-        problem += sum(tile_vars[(r, c)].values()) == 1
-
-        # Pasture only if inside the enclosure (reachable from the horse).
-        problem += tile_vars[(r, c)]["pasture"] <= inside_vars[(r, c)]
-
-        # Cannot be inside if it's a wall.
-        problem += inside_vars[(r, c)] <= 1 - tile_vars[(r, c)]["wall"]
+        # Inside region and wall are mutually exclusive.
+        problem += wall_vars[(r, c)] + inside_vars[(r, c)] <= 1
 
         # Portals cannot be walls.
         if (r, c) in map_data.portal_ids:
-            problem += tile_vars[(r, c)]["wall"] == 0
+            problem += wall_vars[(r, c)] == 0
 
-        # Cherries cannot be walls:
+        # Cherries cannot be walls.
         if (r, c) in map_data.cherries:
-            problem += tile_vars[(r, c)]["wall"] == 0
+            problem += wall_vars[(r, c)] == 0
 
         # Boundary tiles cannot be part of the inside region.
         if (r, c) in boundary_candidates:
@@ -84,21 +74,22 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
 
     # Horse is always inside and not a wall.
     inside_vars[root] = pulp.LpVariable("x_inside_horse", lowBound=1, upBound=1, cat="Binary")
+    wall_vars[root] = pulp.LpVariable("b_wall_horse", lowBound=0, upBound=0, cat="Binary")
 
-    # Tiles adjacent to the horse cannot be grass.
+    # Tiles adjacent to the horse cannot be walls (so flow can emanate).
     hr, hc = map_data.horse
     for nr, nc in map_data.neighbors(hr, hc):
         if (nr, nc) in candidates:
-            problem += tile_vars[(nr, nc)]["grass"] == 0
+            problem += wall_vars[(nr, nc)] == 0
 
-    # Objective: maximize 1 (horse) + pasture tiles + cherry bonuses.
-    cherry_bonus = pulp.lpSum(3 * inside_vars[(r, c)] for r, c in map_data.cherries ) #if (r, c) in inside_vars)
-    problem += 1 + pulp.lpSum(tile_vars[(r, c)]["pasture"] for r, c in candidates) + cherry_bonus
+    # Objective: maximize 1 (horse) + inside tiles + cherry bonuses.
+    cherry_bonus = pulp.lpSum(3 * inside_vars[(r, c)] for r, c in map_data.cherries if (r, c) in inside_vars)
+    problem += 1 + pulp.lpSum(inside_vars[(r, c)] for r, c in candidates) + cherry_bonus
 
     # Wall budget.
-    problem += pulp.lpSum(tile_vars[(r, c)]["wall"] for r, c in candidates) <= max_walls
+    problem += pulp.lpSum(wall_vars[(r, c)] for r, c in candidates) <= max_walls
 
-    # Adjacency consistency: adjacent tiles are same type or at least one is a wall.
+    # Separation constraints: if inside differs across an edge, at least one wall must be present.
     handled_edges: set[Tuple[Coord, Coord]] = set()
     for r, c in adjacency:
         for nr, nc in adjacency[(r, c)]:
@@ -106,25 +97,12 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
             if edge in handled_edges:
                 continue
             handled_edges.add(edge)
-
-            if (r, c) not in tile_vars or (nr, nc) not in tile_vars:
-                continue  # Skip edges involving the horse for state matching.
-
-            z = pulp.LpVariable(f"z_{r}_{c}__{nr}_{nc}", lowBound=0, upBound=1, cat="Binary")
-            z_p = pulp.LpVariable(f"z_p_{r}_{c}__{nr}_{nc}", lowBound=0, upBound=1, cat="Binary")
-            z_g = pulp.LpVariable(f"z_g_{r}_{c}__{nr}_{nc}", lowBound=0, upBound=1, cat="Binary")
-
-            problem += z - z_p - z_g == 0
-
-            problem += z_p <= tile_vars[(r, c)]["pasture"]
-            problem += z_p <= tile_vars[(nr, nc)]["pasture"]
-            problem += z_p >= tile_vars[(r, c)]["pasture"] + tile_vars[(nr, nc)]["pasture"] - 1
-
-            problem += z_g <= tile_vars[(r, c)]["grass"]
-            problem += z_g <= tile_vars[(nr, nc)]["grass"]
-            problem += z_g >= tile_vars[(r, c)]["grass"] + tile_vars[(nr, nc)]["grass"] - 1
-
-            problem += tile_vars[(r, c)]["wall"] + tile_vars[(nr, nc)]["wall"] + z >= 1
+            ir = inside_vars.get((r, c), 0)
+            inr = inside_vars.get((nr, nc), 0)
+            wr = wall_vars.get((r, c), 0)
+            wnr = wall_vars.get((nr, nc), 0)
+            problem += ir - inr <= wr + wnr
+            problem += inr - ir <= wr + wnr
 
     # Connectivity / enclosure via single-commodity flow to keep inside region attached to horse and away from boundary.
     big_m = len(candidates) + 1
@@ -135,9 +113,8 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
                 f"f_{r}_{c}__{nr}_{nc}", lowBound=0, upBound=big_m, cat="Continuous"
             )
             # Capacity respects inside status and walls on the source node (when applicable).
-            problem += flow_vars[(r, c), (nr, nc)] <= big_m * inside_vars[(r, c)]
-            if (r, c) in tile_vars:
-                problem += flow_vars[(r, c), (nr, nc)] <= big_m * (1 - tile_vars[(r, c)]["wall"])
+            problem += flow_vars[(r, c), (nr, nc)] <= big_m * inside_vars.get((r, c), 0)
+            problem += flow_vars[(r, c), (nr, nc)] <= big_m * (1 - wall_vars.get((r, c), 0))
 
     total_inside = pulp.lpSum(inside_vars[(r, c)] for r, c in candidates)
 
@@ -155,9 +132,13 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
 
     status = pulp.LpStatus.get(problem.status, "Unknown")
     assignments: Dict[Coord, Assignment] = {}
-    for coord, vars_for_tile in tile_vars.items():
-        chosen_state = max(vars_for_tile.items(), key=lambda item: item[1].value())[0]
-        assignments[coord] = chosen_state
+    for coord in candidates:
+        if wall_vars[coord].value() >= 0.5:
+            assignments[coord] = "wall"
+        elif inside_vars[coord].value() >= 0.5:
+            assignments[coord] = "pasture"
+        else:
+            assignments[coord] = "grass"
 
     objective_value = pulp.value(problem.objective) if problem.objective is not None else None
     return SolverResult(status=status, objective=objective_value, assignments=assignments)
