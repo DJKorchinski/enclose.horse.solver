@@ -14,7 +14,7 @@ pip install -e .
 ## Usage
 
 ```bash
-python -m enclose_horse.cli --map example_map.txt --max-walls 13 --plot solution.png [--show] [--solver cp-sat]
+python -m enclose_horse.cli --map example_map.txt --max-walls 13 --plot solution.png [--show] [--solver cp-sat|cp-sat-2]
 ```
 
 ### CLI options
@@ -23,7 +23,7 @@ python -m enclose_horse.cli --map example_map.txt --max-walls 13 --plot solution
 - `--max-walls N`: wall budget (default: 13).
 - `--plot PATH`: save a rendered PNG of the solution.
 - `--show`: display the matplotlib window instead of/as well as saving.
-- `--solver {ilp,cp-sat}`: choose MILP (default) or CP-SAT backend.
+- `--solver {ilp,cp-sat,cp-sat-2}`: choose MILP (default), CP-SAT with flow (cp-sat), or CP-SAT with Boolean reachability (cp-sat-2).
 
 ## Example Solution
 
@@ -69,4 +69,6 @@ Key expectations: example map optimal = 103 with 13 walls; portal map optimal = 
 
 ## TODO
 
-Accept a screenshot as input, or an enclose.horse puzzle url.
+- Accept a screenshot as input, or an enclose.horse puzzle url.
+
+- Rewrite the cp-sat solver to use binary variables rather than the bigm approach

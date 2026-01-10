@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 from typing import Optional
 
-from .cp_sat_solver import solve_cp_sat
+from .cp_sat_solver import solve_cp_sat, solve_cp_sat_reachability
 from .ilp_solver import solve_ilp
 from .parser import parse_map_file
 from .viz import display_solution, save_solution_plot
@@ -16,7 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--show", action="store_true", help="Display the visualization in a window.")
     parser.add_argument(
         "--solver",
-        choices=["ilp", "cp-sat"],
+        choices=["ilp", "cp-sat", "cp-sat-2"],
         default="cp-sat",
         help="Solver backend to use (default: ilp).",
     )
@@ -31,6 +31,8 @@ def main(args: Optional[argparse.Namespace] = None) -> int:
     start_time = _time.time()
     if ns.solver == "cp-sat":
         result = solve_cp_sat(map_data, max_walls=ns.max_walls)
+    elif ns.solver == "cp-sat-2":
+        result = solve_cp_sat_reachability(map_data, max_walls=ns.max_walls)
     else:
         result = solve_ilp(map_data, max_walls=ns.max_walls)
     end_time = _time.time()

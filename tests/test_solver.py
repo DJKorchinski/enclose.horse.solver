@@ -3,6 +3,7 @@ from pathlib import Path
 from enclose_horse.ilp_solver import solve_ilp
 from enclose_horse.cp_sat_solver import solve_cp_sat
 from enclose_horse.parser import parse_map_file
+from enclose_horse.cp_sat_solver import solve_cp_sat, solve_cp_sat_reachability
 
 
 def test_solver_finds_feasible_solution():
@@ -55,5 +56,18 @@ def test_cp_sat_matches_optima():
     ]:
         map_data = parse_map_file(root / fname)
         result = solve_cp_sat(map_data, max_walls=walls)
+        assert result.status.lower() in {"optimal", "feasible"}
+        assert round(result.objective) == objective
+
+
+def test_cp_sat_reachability_matches_optima():
+    root = Path(__file__).resolve().parents[1]
+    for fname, walls, objective in [
+        ("example_map.txt", 13, 103),
+        ("portal_map.txt", 10, 94),
+        ("cherry_map.txt", 12, 66),
+    ]:
+        map_data = parse_map_file(root / fname)
+        result = solve_cp_sat_reachability(map_data, max_walls=walls)
         assert result.status.lower() in {"optimal", "feasible"}
         assert round(result.objective) == objective
