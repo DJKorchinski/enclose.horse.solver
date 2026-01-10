@@ -37,14 +37,6 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
 
     root = map_data.horse
     nodes = set(candidates)
-    nodes.add(root)
-
-    # Add horse adjacency to candidates.
-    adjacency[root] = []
-    for nr, nc in map_data.neighbors(*root):
-        if (nr, nc) in candidates:
-            adjacency[root].append((nr, nc))
-            adjacency.setdefault((nr, nc), []).append(root)
 
     problem = pulp.LpProblem("horse_enclosure", pulp.LpMaximize)
 
@@ -69,16 +61,16 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
             problem += wall_vars[(r, c)] == 0
 
         # Boundary tiles cannot be part of the inside region.
-        if (r, c) in boundary_candidates:
+        if (r, c) in boundary_candidates and (r, c) != root:
             problem += inside_vars[(r, c)] == 0
 
     # Horse is always inside and not a wall.
-    inside_vars[root] = pulp.LpVariable("x_inside_horse", lowBound=1, upBound=1, cat="Binary")
-    wall_vars[root] = pulp.LpVariable("b_wall_horse", lowBound=0, upBound=0, cat="Binary")
+    problem += inside_vars[root] == 1
+    problem += wall_vars[root] == 0
 
     # Objective: maximize inside tiles (including horse) + cherry bonuses.
     cherry_bonus = pulp.lpSum(3 * inside_vars[(r, c)] for r, c in map_data.cherries)
-    problem += inside_vars[root] + pulp.lpSum(inside_vars[(r, c)] for r, c in candidates) + cherry_bonus
+    problem += pulp.lpSum(inside_vars[(r, c)] for r, c in candidates) + cherry_bonus
 
     # Wall budget.
     problem += pulp.lpSum(wall_vars[(r, c)] for r, c in candidates) <= max_walls
@@ -91,10 +83,10 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
             if edge in handled_edges:
                 continue
             handled_edges.add(edge)
-            ir = inside_vars.get((r, c), 0)
-            inr = inside_vars.get((nr, nc), 0)
-            wr = wall_vars.get((r, c), 0)
-            wnr = wall_vars.get((nr, nc), 0)
+            ir = inside_vars[(r, c)]
+            inr = inside_vars[(nr, nc)]
+            wr = wall_vars[(r, c)]
+            wnr = wall_vars[(nr, nc)]
             problem += ir - inr <= wr + wnr
             problem += inr - ir <= wr + wnr
 
@@ -107,10 +99,10 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
                 f"f_{r}_{c}__{nr}_{nc}", lowBound=0, upBound=big_m, cat="Continuous"
             )
             # Capacity respects inside status and walls on the source node (when applicable).
-            problem += flow_vars[(r, c), (nr, nc)] <= big_m * inside_vars.get((r, c), 0)
-            problem += flow_vars[(r, c), (nr, nc)] <= big_m * (1 - wall_vars.get((r, c), 0))
+            problem += flow_vars[(r, c), (nr, nc)] <= big_m * inside_vars[(r, c)]
+            problem += flow_vars[(r, c), (nr, nc)] <= big_m * (1 - wall_vars[(r, c)])
 
-    total_inside = pulp.lpSum(inside_vars[(r, c)] for r, c in candidates)
+    total_inside = pulp.lpSum(inside_vars[(r, c)] for r, c in candidates if (r, c) != root)
 
     for node in nodes:
         incoming = pulp.lpSum(flow_vars[(u, v)] for (u, v) in flow_vars if v == node)

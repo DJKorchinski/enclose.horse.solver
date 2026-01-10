@@ -4,10 +4,10 @@ from .parser import Coord, MapData, Tile
 
 
 def candidate_tiles(map_data: MapData) -> Set[Coord]:
-    """Return coordinates that can be decided by the solver (non-water and non-horse)."""
+    """Return coordinates that can be decided by the solver (non-water)."""
     coords: Set[Coord] = set()
     for r, c, tile in map_data.tiles():
-        if tile not in {Tile.WATER, Tile.HORSE}:
+        if tile not in {Tile.WATER}:
             coords.add((r, c))
     return coords
 
