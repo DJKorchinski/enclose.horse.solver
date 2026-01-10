@@ -104,29 +104,23 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
         wall_vars[coord] = model.NewBoolVar(f"wall_{coord[0]}_{coord[1]}")
         reach_vars[coord] = model.NewBoolVar(f"reach_{coord[0]}_{coord[1]}")
 
+        # A tile cannot be both a wall and reachable.
         model.Add(wall_vars[coord] + reach_vars[coord] <= 1)
 
+        # Certain tiles cannot be walls.
         if coord in map_data.portal_ids or coord in map_data.cherries or coord == root:
             model.Add(wall_vars[coord] == 0)
 
+        # Boundary tiles (except root) cannot be reachable, else the horse escapes!
         r, c = coord
         if coord != root and (r in (0, map_data.height - 1) or c in (0, map_data.width - 1)):
             model.Add(reach_vars[coord] == 0)
 
+    # Root is always reachable.
     model.Add(reach_vars[root] == 1)
 
+    # Limit on walls used.
     model.Add(sum(wall_vars.values()) <= max_walls)
-
-    # Separation: difference in inside across an edge implies a wall on that edge.
-    handled_edges: set[Tuple[Coord, Coord]] = set()
-    for u in adjacency:
-        for v in adjacency[u]:
-            edge = tuple(sorted((u, v)))
-            if edge in handled_edges:
-                continue
-            handled_edges.add(edge)
-            model.Add(reach_vars[u] - reach_vars[v] <= wall_vars[u] + wall_vars[v])
-            model.Add(reach_vars[v] - reach_vars[u] <= wall_vars[u] + wall_vars[v])
 
     # Reachability propagation using helper AND vars per edge direction.
     for v in candidates:
