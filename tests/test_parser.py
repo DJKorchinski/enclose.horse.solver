@@ -21,3 +21,11 @@ def test_parse_portal_map():
 
     assert map_data.portals[0] == [(13, 4), (13, 10)]  # coordinates of portal id 0
     assert map_data.horse == (13, 12)
+
+
+def test_parse_cherry_map():
+    root = Path(__file__).resolve().parents[1]
+    map_data = parse_map_file(root / "cherry_map.txt")
+
+    assert len(map_data.cherries) == 10
+    assert map_data.horse == (7, 6)

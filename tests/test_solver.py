@@ -33,3 +33,13 @@ def test_portal_map_hits_known_optimum():
     assert result.status.lower() == "optimal"
     assert round(result.objective) == 94
     assert result.walls_used() <= 10
+
+
+def test_cherry_map_hits_known_optimum():
+    root = Path(__file__).resolve().parents[1]
+    map_data = parse_map_file(root / "cherry_map.txt")
+    result = solve_ilp(map_data, max_walls=12)
+
+    assert result.status.lower() == "optimal"
+    assert round(result.objective) == 66
+    assert result.walls_used() <= 12

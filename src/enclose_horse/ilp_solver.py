@@ -74,6 +74,10 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
         if (r, c) in map_data.portal_ids:
             problem += tile_vars[(r, c)]["wall"] == 0
 
+        # Cherries cannot be walls:
+        if (r, c) in map_data.cherries:
+            problem += tile_vars[(r, c)]["wall"] == 0
+
         # Boundary tiles cannot be part of the inside region.
         if (r, c) in boundary_candidates:
             problem += inside_vars[(r, c)] == 0
@@ -87,8 +91,9 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
         if (nr, nc) in candidates:
             problem += tile_vars[(nr, nc)]["grass"] == 0
 
-    # Objective: maximize 1 (horse) + pasture tiles.
-    problem += 1 + pulp.lpSum(tile_vars[(r, c)]["pasture"] for r, c in candidates)
+    # Objective: maximize 1 (horse) + pasture tiles + cherry bonuses.
+    cherry_bonus = pulp.lpSum(3 * inside_vars[(r, c)] for r, c in map_data.cherries ) #if (r, c) in inside_vars)
+    problem += 1 + pulp.lpSum(tile_vars[(r, c)]["pasture"] for r, c in candidates) + cherry_bonus
 
     # Wall budget.
     problem += pulp.lpSum(tile_vars[(r, c)]["wall"] for r, c in candidates) <= max_walls

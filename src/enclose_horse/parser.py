@@ -8,6 +8,7 @@ class Tile(str, Enum):
     WATER = "~"
     GRASS = "."
     HORSE = "H"
+    CHERRY = "C"
     PORTAL = "P"  # placeholder value; actual id stored separately.
 
 
@@ -22,6 +23,7 @@ class MapData:
     horse: Coord
     portals: Dict[int, List[Coord]]
     portal_ids: Dict[Coord, int]
+    cherries: List[Coord]
 
     def neighbors(self, row: int, col: int) -> Iterable[Coord]:
         deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -46,6 +48,7 @@ def parse_map_file(path: Path | str) -> MapData:
     horse: Coord | None = None
     portals: Dict[int, List[Coord]] = {}
     portal_ids: Dict[Coord, int] = {}
+    cherries: List[Coord] = []
 
     for row_idx, line in enumerate(raw_lines):
         if len(line) != width:
@@ -62,6 +65,9 @@ def parse_map_file(path: Path | str) -> MapData:
                     raise ValueError("Multiple horses found in map.")
                 horse = (row_idx, col_idx)
                 row.append(Tile.HORSE)
+            elif ch == Tile.CHERRY.value:
+                cherries.append((row_idx, col_idx))
+                row.append(Tile.CHERRY)
             elif ch.isdigit():
                 portal_id = int(ch)
                 coord = (row_idx, col_idx)
@@ -82,4 +88,5 @@ def parse_map_file(path: Path | str) -> MapData:
         horse=horse,
         portals=portals,
         portal_ids=portal_ids,
+        cherries=cherries,
     )
