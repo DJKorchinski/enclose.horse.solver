@@ -4,6 +4,7 @@ __all__ = [
     "parser",
     "graph",
     "ilp_solver",
+    "cp_sat_solver",
     "viz",
     "cli",
 ]
