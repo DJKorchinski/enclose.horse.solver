@@ -1,6 +1,6 @@
 # Enclose Horse Solver
 
-An integer programming solver for the horse-enclosure puzzle. It parses text map inputs, models the enclosure as a MILP, and can solve and visualize solutions.
+An integer programming solver for the [horse-enclosure puzzle](https://enclose.horse). It parses text map inputs, models the enclosure as a MILP, and can solve and visualize solutions.
 
 ## Installation
 ```bash
@@ -14,6 +14,15 @@ pip install -e .
 ```bash
 python -m enclose_horse.cli --map example_map.txt --max-walls 13 --plot solution.png [--show]
 ```
+
+## Example Solution
+
+Portal map ([2026-01-10](https://enclose.horse/play/2026-01-09)) solved with 10 walls (score 94):
+
+![Portal solution](portal_solution.png)
+
+The horse is the brown square, portals are purple, walls are green, water is blue, and scoring tiles are yellow. 
+
 
 ### CLI options
 - `--map PATH` (required): text map file.
@@ -50,9 +59,3 @@ See `example_map.txt`, `portal_map.txt`, and `cherry_map.txt` for reference layo
 pytest
 ```
 Key expectations: example map optimal = 103 with 13 walls; portal map optimal = 94 with 10 walls; cherry map optimal = 66 with 12 walls.
-
-## Example Solution
-
-Portal map solved with 10 walls (score 94):
-
-![Portal solution](portal_solution.png)
