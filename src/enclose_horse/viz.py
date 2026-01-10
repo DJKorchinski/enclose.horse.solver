@@ -2,6 +2,7 @@ from typing import Dict, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import colors as mcolors
 
 from .ilp_solver import SolverResult
 from .parser import Coord, MapData, Tile
@@ -26,10 +27,11 @@ def _color_for_tile(tile: Tile, assignment: str | None) -> str:
 
 
 def render_solution(map_data: MapData, result: SolverResult) -> Tuple[plt.Figure, plt.Axes]:
-    color_grid = np.empty((map_data.height, map_data.width), dtype=object)
+    # Build RGBA float grid for imshow (matplotlib rejects object dtype).
+    color_grid = np.zeros((map_data.height, map_data.width, 4), dtype=float)
     for r, c, tile in map_data.tiles():
         assignment = result.assignments.get((r, c))
-        color_grid[r, c] = _color_for_tile(tile, assignment)
+        color_grid[r, c] = mcolors.to_rgba(_color_for_tile(tile, assignment))
 
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.imshow(color_grid, origin="upper")
@@ -47,4 +49,10 @@ def save_solution_plot(map_data: MapData, result: SolverResult, output_path: str
     fig, ax = render_solution(map_data, result)
     if output_path:
         fig.savefig(output_path, bbox_inches="tight")
+    plt.close(fig)
+
+
+def display_solution(map_data: MapData, result: SolverResult) -> None:
+    fig, ax = render_solution(map_data, result)
+    plt.show()
     plt.close(fig)
