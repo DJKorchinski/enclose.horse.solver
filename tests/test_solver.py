@@ -23,3 +23,13 @@ def test_example_map_hits_known_optimum():
     assert result.status.lower() == "optimal"
     assert round(result.objective) == 103
     assert result.walls_used() == 13
+
+
+def test_portal_map_hits_known_optimum():
+    root = Path(__file__).resolve().parents[1]
+    map_data = parse_map_file(root / "portal_map.txt")
+    result = solve_ilp(map_data, max_walls=10)
+
+    assert result.status.lower() == "optimal"
+    assert round(result.objective) == 94
+    assert result.walls_used() <= 10

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple
 
 
 class Tile(str, Enum):
@@ -19,6 +19,7 @@ class MapData:
     width: int
     height: int
     horse: Coord
+    portals: Dict[int, List[Coord]]
 
     def neighbors(self, row: int, col: int) -> Iterable[Coord]:
         deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -41,6 +42,7 @@ def parse_map_file(path: Path | str) -> MapData:
     width = len(raw_lines[0])
     grid: List[List[Tile]] = []
     horse: Coord | None = None
+    portals: Dict[int, List[Coord]] = {}
 
     for row_idx, line in enumerate(raw_lines):
         if len(line) != width:
@@ -57,6 +59,10 @@ def parse_map_file(path: Path | str) -> MapData:
                     raise ValueError("Multiple horses found in map.")
                 horse = (row_idx, col_idx)
                 row.append(Tile.HORSE)
+            elif ch.isdigit():
+                portal_id = int(ch)
+                portals.setdefault(portal_id, []).append((row_idx, col_idx))
+                row.append(Tile.GRASS)
             else:
                 raise ValueError(f"Unexpected tile '{ch}' at {(row_idx, col_idx)}")
         grid.append(row)
@@ -64,4 +70,4 @@ def parse_map_file(path: Path | str) -> MapData:
     if horse is None:
         raise ValueError("No horse tile found in map.")
 
-    return MapData(grid=grid, width=width, height=len(grid), horse=horse)
+    return MapData(grid=grid, width=width, height=len(grid), horse=horse, portals=portals)
