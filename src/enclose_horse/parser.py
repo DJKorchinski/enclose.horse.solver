@@ -8,6 +8,7 @@ class Tile(str, Enum):
     WATER = "~"
     GRASS = "."
     HORSE = "H"
+    PORTAL = "P"  # placeholder value; actual id stored separately.
 
 
 Coord = Tuple[int, int]
@@ -20,6 +21,7 @@ class MapData:
     height: int
     horse: Coord
     portals: Dict[int, List[Coord]]
+    portal_ids: Dict[Coord, int]
 
     def neighbors(self, row: int, col: int) -> Iterable[Coord]:
         deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -43,6 +45,7 @@ def parse_map_file(path: Path | str) -> MapData:
     grid: List[List[Tile]] = []
     horse: Coord | None = None
     portals: Dict[int, List[Coord]] = {}
+    portal_ids: Dict[Coord, int] = {}
 
     for row_idx, line in enumerate(raw_lines):
         if len(line) != width:
@@ -61,8 +64,10 @@ def parse_map_file(path: Path | str) -> MapData:
                 row.append(Tile.HORSE)
             elif ch.isdigit():
                 portal_id = int(ch)
-                portals.setdefault(portal_id, []).append((row_idx, col_idx))
-                row.append(Tile.GRASS)
+                coord = (row_idx, col_idx)
+                portals.setdefault(portal_id, []).append(coord)
+                portal_ids[coord] = portal_id
+                row.append(Tile.PORTAL)
             else:
                 raise ValueError(f"Unexpected tile '{ch}' at {(row_idx, col_idx)}")
         grid.append(row)
@@ -70,4 +75,11 @@ def parse_map_file(path: Path | str) -> MapData:
     if horse is None:
         raise ValueError("No horse tile found in map.")
 
-    return MapData(grid=grid, width=width, height=len(grid), horse=horse, portals=portals)
+    return MapData(
+        grid=grid,
+        width=width,
+        height=len(grid),
+        horse=horse,
+        portals=portals,
+        portal_ids=portal_ids,
+    )

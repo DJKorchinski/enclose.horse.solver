@@ -70,6 +70,10 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
         # Cannot be inside if it's a wall.
         problem += inside_vars[(r, c)] <= 1 - tile_vars[(r, c)]["wall"]
 
+        # Portals cannot be walls.
+        if (r, c) in map_data.portal_ids:
+            problem += tile_vars[(r, c)]["wall"] == 0
+
         # Boundary tiles cannot be part of the inside region.
         if (r, c) in boundary_candidates:
             problem += inside_vars[(r, c)] == 0
