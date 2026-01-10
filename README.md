@@ -23,7 +23,7 @@ python -m enclose_horse.cli --map example_map.txt --max-walls 13 --plot solution
 - `--max-walls N`: wall budget (default: 13).
 - `--plot PATH`: save a rendered PNG of the solution.
 - `--show`: display the matplotlib window instead of/as well as saving.
-- `--solver {ilp,cp-sat,cp-sat-2}`: choose MILP (default), CP-SAT with flow (cp-sat), or CP-SAT with Boolean reachability (cp-sat-2).
+- `--solver {ilp,cp-sat,cp-sat-2}`: choose MILP (default), CP-SAT with flow (cp-sat), or CP-SAT with Boolean reachability (cp-sat-2, more efficient).
 
 ## Example Solution
 

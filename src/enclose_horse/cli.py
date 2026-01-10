@@ -17,8 +17,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--solver",
         choices=["ilp", "cp-sat", "cp-sat-2"],
-        default="cp-sat",
-        help="Solver backend to use (default: ilp).",
+        default="cp-sat-2",
+        help="Solver backend and strategy to use (default: ilp).",
     )
     return parser.parse_args()
 
