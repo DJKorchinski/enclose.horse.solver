@@ -93,25 +93,26 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
     # Connectivity / enclosure via single-commodity flow to keep inside region attached to horse and away from boundary.
     big_m = len(candidates) + 1
     flow_vars: Dict[Tuple[Coord, Coord], pulp.LpVariable] = {}
-    for r, c in adjacency:
-        for nr, nc in adjacency[(r, c)]:
+    for r, c in adjacency: # for every candidate tile
+        for nr, nc in adjacency[(r, c)]: # for every neighbor of that tile
             flow_vars[(r, c), (nr, nc)] = pulp.LpVariable(
                 f"f_{r}_{c}__{nr}_{nc}", lowBound=0, upBound=big_m, cat="Continuous"
-            )
+            ) # define how much flow is going from (r,c) to (nr,nc)
             # Capacity respects inside status and walls on the source node (when applicable).
-            problem += flow_vars[(r, c), (nr, nc)] <= big_m * inside_vars[(r, c)]
-            problem += flow_vars[(r, c), (nr, nc)] <= big_m * (1 - wall_vars[(r, c)])
+            problem += flow_vars[(r, c), (nr, nc)] <= big_m * inside_vars[(r, c)] # if the source is not inside, no flow can go out of it
+            problem += flow_vars[(r, c), (nr, nc)] <= big_m * (1 - wall_vars[(r, c)]) # if the source is a wall, no flow can go out of it
 
     total_inside = pulp.lpSum(inside_vars[(r, c)] for r, c in candidates if (r, c) != root)
 
     for node in nodes:
+        # Work out flow conservation / generation at each node, based on flows in and out.
         incoming = pulp.lpSum(flow_vars[(u, v)] for (u, v) in flow_vars if v == node)
         outgoing = pulp.lpSum(flow_vars[(u, v)] for (u, v) in flow_vars if u == node)
         if node == root:
             # Source pushes flow equal to number of inside tiles (excluding the horse).
             problem += outgoing - incoming == total_inside
         else:
-            problem += incoming - outgoing == inside_vars[node]
+            problem += incoming - outgoing == inside_vars[node] # each inside node (not horse) consumes 1 unit of flow
 
     solver = pulp.PULP_CBC_CMD(msg=False)
     problem.solve(solver)
