@@ -76,15 +76,9 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
     inside_vars[root] = pulp.LpVariable("x_inside_horse", lowBound=1, upBound=1, cat="Binary")
     wall_vars[root] = pulp.LpVariable("b_wall_horse", lowBound=0, upBound=0, cat="Binary")
 
-    # Tiles adjacent to the horse cannot be walls (so flow can emanate).
-    hr, hc = map_data.horse
-    for nr, nc in map_data.neighbors(hr, hc):
-        if (nr, nc) in candidates:
-            problem += wall_vars[(nr, nc)] == 0
-
-    # Objective: maximize 1 (horse) + inside tiles + cherry bonuses.
-    cherry_bonus = pulp.lpSum(3 * inside_vars[(r, c)] for r, c in map_data.cherries if (r, c) in inside_vars)
-    problem += 1 + pulp.lpSum(inside_vars[(r, c)] for r, c in candidates) + cherry_bonus
+    # Objective: maximize inside tiles (including horse) + cherry bonuses.
+    cherry_bonus = pulp.lpSum(3 * inside_vars[(r, c)] for r, c in map_data.cherries)
+    problem += inside_vars[root] + pulp.lpSum(inside_vars[(r, c)] for r, c in candidates) + cherry_bonus
 
     # Wall budget.
     problem += pulp.lpSum(wall_vars[(r, c)] for r, c in candidates) <= max_walls
