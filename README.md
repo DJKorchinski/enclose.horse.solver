@@ -50,3 +50,9 @@ See `example_map.txt`, `portal_map.txt`, and `cherry_map.txt` for reference layo
 pytest
 ```
 Key expectations: example map optimal = 103 with 13 walls; portal map optimal = 94 with 10 walls; cherry map optimal = 66 with 12 walls.
+
+## Example Solution
+
+Portal map solved with 10 walls (score 94):
+
+![Portal solution](portal_solution.png)
