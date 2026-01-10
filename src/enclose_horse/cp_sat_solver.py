@@ -98,16 +98,13 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
 
     model = cp_model.CpModel()
     wall_vars: Dict[Coord, cp_model.IntVar] = {}
-    inside_vars: Dict[Coord, cp_model.IntVar] = {}
     reach_vars: Dict[Coord, cp_model.IntVar] = {}
 
     for coord in candidates:
         wall_vars[coord] = model.NewBoolVar(f"wall_{coord[0]}_{coord[1]}")
-        inside_vars[coord] = model.NewBoolVar(f"inside_{coord[0]}_{coord[1]}")
         reach_vars[coord] = model.NewBoolVar(f"reach_{coord[0]}_{coord[1]}")
 
-        model.Add(wall_vars[coord] + inside_vars[coord] <= 1)
-        model.Add(inside_vars[coord] == reach_vars[coord])
+        model.Add(wall_vars[coord] + reach_vars[coord] <= 1)
 
         if coord in map_data.portal_ids or coord in map_data.cherries or coord == root:
             model.Add(wall_vars[coord] == 0)
@@ -117,7 +114,6 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
             model.Add(reach_vars[coord] == 0)
 
     model.Add(reach_vars[root] == 1)
-    model.Add(inside_vars[root] == 1)
 
     model.Add(sum(wall_vars.values()) <= max_walls)
 
@@ -129,8 +125,8 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
             if edge in handled_edges:
                 continue
             handled_edges.add(edge)
-            model.Add(inside_vars[u] - inside_vars[v] <= wall_vars[u] + wall_vars[v])
-            model.Add(inside_vars[v] - inside_vars[u] <= wall_vars[u] + wall_vars[v])
+            model.Add(reach_vars[u] - reach_vars[v] <= wall_vars[u] + wall_vars[v])
+            model.Add(reach_vars[v] - reach_vars[u] <= wall_vars[u] + wall_vars[v])
 
     # Reachability propagation using helper AND vars per edge direction.
     for v in candidates:
@@ -138,17 +134,20 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
             continue
         helpers = []
         for u in adjacency.get(v, []):
-            h = model.NewBoolVar(f"h_{u}_{v}")
+            h = model.NewBoolVar(f"h_{u}_{v}") # can reachability extend from u to v?
             helpers.append(h)
             model.Add(h <= reach_vars[u])
             model.Add(h <= 1 - wall_vars[u])
             model.Add(h <= 1 - wall_vars[v])
-            model.Add(h >= reach_vars[u] + (1 - wall_vars[u]) + (1 - wall_vars[v]) - 2)
+            # if u is reachable and neither u nor v is a wall, then h is true
+            model.Add(h >= reach_vars[u] + (1 - wall_vars[u]) + (1 - wall_vars[v]) - 2) 
         if helpers:
-            model.Add(reach_vars[v] <= sum(helpers))
+            model.Add(reach_vars[v] <= sum(helpers)) # v is not reachable if all helpers are false
+            for h in helpers:
+                model.Add(reach_vars[v] >= h)
 
-    cherry_bonus = sum(3 * inside_vars[c] for c in map_data.cherries)
-    model.Maximize(sum(inside_vars.values()) + cherry_bonus)
+    cherry_bonus = sum(3 * reach_vars[c] for c in map_data.cherries)
+    model.Maximize(sum(reach_vars.values()) + cherry_bonus)
 
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
@@ -156,7 +155,7 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
     for coord in candidates:
         if solver.Value(wall_vars[coord]) >= 1:
             assignments[coord] = "wall"
-        elif solver.Value(inside_vars[coord]) >= 1:
+        elif solver.Value(reach_vars[coord]) >= 1:
             assignments[coord] = "pasture"
         else:
             assignments[coord] = "grass"
