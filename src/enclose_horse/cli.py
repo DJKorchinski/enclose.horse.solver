@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 from .cp_sat_solver import solve_cp_sat, solve_cp_sat_reachability
+from .image_parser import classify_image, load_stats, map_to_string
 from .ilp_solver import solve_ilp
 from .parser import parse_map_file
 from .viz import display_solution, save_solution_plot
@@ -10,10 +11,19 @@ from .viz import display_solution, save_solution_plot
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Horse enclosure ILP solver.")
-    parser.add_argument("--map", dest="map_path", required=True, help="Path to map text file.")
+    src_group = parser.add_mutually_exclusive_group(required=True)
+    src_group.add_argument("--map", dest="map_path", help="Path to map text file.")
+    src_group.add_argument("--image", dest="image_path", help="Path to screenshot to parse.")
     parser.add_argument("--max-walls", type=int, default=13, help="Maximum walls available.")
     parser.add_argument("--plot", dest="plot_path", help="Optional path to save rendered solution PNG.")
     parser.add_argument("--show", action="store_true", help="Display the visualization in a window.")
+    parser.add_argument("--write-map", dest="write_map", help="If set, write parsed map text to this path.")
+    parser.add_argument(
+        "--calibration",
+        dest="calibration_path",
+        default="data/tile_color_stats.json",
+        help="Path to saved 6D tile color statistics for image parsing.",
+    )
     parser.add_argument(
         "--solver",
         choices=["ilp", "cp-sat", "cp-sat-2"],
@@ -25,7 +35,14 @@ def parse_args() -> argparse.Namespace:
 
 def main(args: Optional[argparse.Namespace] = None) -> int:
     ns = args or parse_args()
-    map_data = parse_map_file(ns.map_path)
+    if ns.map_path:
+        map_data = parse_map_file(ns.map_path)
+    else:
+        models, scale = load_stats(ns.calibration_path)
+        map_data, _ = classify_image(ns.image_path, models, scale)
+        if ns.write_map:
+            Path(ns.write_map).write_text(map_to_string(map_data))
+            print(f"Wrote parsed map to {ns.write_map}")
 
     import time as _time
     start_time = _time.time()

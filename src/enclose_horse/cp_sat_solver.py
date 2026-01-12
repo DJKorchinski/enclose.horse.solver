@@ -128,7 +128,7 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
             continue
         helpers = []
         for u in adjacency.get(v, []):
-            h = model.NewBoolVar(f"h_{u}_{v}") # can reachability extend from u to v?
+            h = model.NewBoolVar(f"h_{u}_{v}") # does reachability extend from u to v?
             helpers.append(h)
             model.Add(h <= reach_vars[u])
             model.Add(h <= 1 - wall_vars[u])
