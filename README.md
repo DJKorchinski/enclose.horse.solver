@@ -52,7 +52,7 @@ Get a solution!
 
 ![Portal solution](portal_solution.png)
 
-The horse is the brown square, portals are purple, walls are green, water is blue, and scoring tiles are yellow.
+The horse is the brown square, walls are grey and water is blue, scoring territory is yellow while unenclosed grass is green. Cherries are ruby red, while portals are shown in different hues (purple, cyan, and crimson). 
 
 ## Map format
 
