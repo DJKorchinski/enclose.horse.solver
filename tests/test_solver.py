@@ -9,6 +9,7 @@ MAP_CASES = [
     ("example_map.txt", 13, 103),
     ("portal_map.txt", 10, 94),
     ("cherry_map.txt", 12, 66),
+    ("portal2_map.txt", 12, 204),
 ]
 
 
