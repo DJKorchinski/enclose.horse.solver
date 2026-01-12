@@ -36,7 +36,7 @@ python -m enclose_horse.cli --image example.png --max-walls 13 --write-map parse
 
 ## Example Solution
 
-Portal map ([2026-01-10](https://enclose.horse/play/2026-01-12)) solved with 12 walls (score 204, optimal):
+Portal map ([2026-01-12](https://enclose.horse/play/2026-01-12)) solved with 12 walls (score 204, optimal):
 
 Start with a screenshot:
 
