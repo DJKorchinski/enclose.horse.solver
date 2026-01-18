@@ -91,16 +91,10 @@ def solve_cp_sat(map_data: MapData, max_walls: int) -> SolverResult:
 
 
 def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult:
-    """Boolean reachability propagation without big-M flow."""
+    """Boolean reachability propagation without big-M flow. Just optimize for reachable tiles, then perform a BFS to confirm connectivity."""
     candidates = candidate_tiles(map_data)
     adjacency = build_adjacency(map_data)
     root = map_data.horse
-
-    #okay, we're going to rewrite this function here.
-    #Optimize for 'inside' variables still
-    #require that neighbhours differ in 'inside' only if there's a wall between them
-    #this will not guarantee connectivity (things unreachable from the horse but not reaching the boundary will be 'inside')
-    #so we need a second pass flowing frmo the horse to check connectivity
 
     model = cp_model.CpModel()
     wall_vars: Dict[Coord, cp_model.IntVar] = {}
@@ -147,9 +141,6 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
     assignments: Dict[Coord, Assignment] = {}
-
-
- 
         
     #breadth-first search from root to count reachable 'inside' tiles
     visited: set[Coord] = set()
