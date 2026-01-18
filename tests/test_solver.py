@@ -5,6 +5,7 @@ from enclose_horse.ilp_solver import solve_ilp
 from enclose_horse.parser import parse_map_file
 
 ROOT = Path(__file__).resolve().parents[1]
+MAP_ROOT = ROOT / "maps"
 MAP_CASES = [
     ("example_map.txt", 13, 103),
     ("portal_map.txt", 10, 94),
@@ -17,7 +18,7 @@ MAP_CASES = [
 
 def _assert_solver_hits_optimum(solver_fn):
     for fname, walls, objective in MAP_CASES:
-        map_data = parse_map_file(ROOT / fname)
+        map_data = parse_map_file(MAP_ROOT / fname)
         result = solver_fn(map_data, max_walls=walls)
         assert result.status.lower() in {"optimal", "feasible"}
         assert round(result.objective) == objective

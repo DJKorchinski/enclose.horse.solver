@@ -14,13 +14,13 @@ pip install -e .
 ## Usage
 
 ```bash
-python -m enclose_horse.cli --map example_map.txt --max-walls 13 --plot solution.png [--show] [--solver cp-sat|cp-sat-2]
+python -m enclose_horse.cli --map maps/example_map.txt --max-walls 13 --plot solution.png [--show] [--solver cp-sat|cp-sat-2]
 ```
 
 Parse and solve directly from a screenshot (requires `data/tile_color_stats.json`):
 
 ```bash
-python -m enclose_horse.cli --image example.png --max-walls 13 --write-map parsed.txt --solver cp-sat-2
+python -m enclose_horse.cli --image images/example.png --max-walls 13 --write-map parsed.txt --solver cp-sat-2
 ```
 
 ### CLI options
@@ -40,17 +40,17 @@ Portal map ([2026-01-12](https://enclose.horse/play/2026-01-12)) solved with 12 
 
 Start with a screenshot:
 
-![Portal input screenshot](portal2.png)
+![Portal input screenshot](images/portal2.png)
 
 Run:
 
 ```bash
-python -m enclose_horse.cli --image portal2.png --max-walls 12 --show
+python -m enclose_horse.cli --image images/portal2.png --max-walls 12 --show
 ```
 
 Get a solution!
 
-![Portal solution](portal_solution.png)
+![Portal solution](images/portal_solution.png)
 
 The horse is the brown square, walls are grey and water is blue, scoring territory is yellow while unenclosed grass is green. Cherries are ruby red, while portals are shown in different hues (purple, cyan, and crimson).
 
@@ -62,7 +62,7 @@ The horse is the brown square, walls are grey and water is blue, scoring territo
 - `0-9` portals; identical digits are linked
 - `C` cherries; yield +3 when enclosed (tile is worth 4 total)
 
-See `example_map.txt`, `portal_map.txt`, and `cherry_map.txt` for reference layouts. Note that this follows the ascii map layout in the comment of the enclose.horse website.
+See `maps/example_map.txt`, `maps/portal_map.txt`, and `maps/cherry_map.txt` for reference layouts. Note that this follows the ascii map layout in the comment of the enclose.horse website.
 
 ## Solver flow
 

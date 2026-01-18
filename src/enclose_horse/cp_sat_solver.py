@@ -139,6 +139,8 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
     model.Maximize(sum(inside_vars.values()) + cherry_bonus)
 
     solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = 15.0  # 15 second time limit
+    solver.parameters.random_seed = 42
     status = solver.Solve(model)
     assignments: Dict[Coord, Assignment] = {}
         

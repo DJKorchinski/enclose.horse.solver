@@ -5,7 +5,7 @@ from enclose_horse.parser import Tile, parse_map_file
 
 def test_parse_example_map():
     root = Path(__file__).resolve().parents[1]
-    map_data = parse_map_file(root / "example_map.txt")
+    map_data = parse_map_file(root / "maps" / "example_map.txt")
 
     assert map_data.width == 21
     assert map_data.height == 21
@@ -17,7 +17,7 @@ def test_parse_example_map():
 
 def test_parse_portal_map():
     root = Path(__file__).resolve().parents[1]
-    map_data = parse_map_file(root / "portal_map.txt")
+    map_data = parse_map_file(root / "maps" / "portal_map.txt")
 
     assert map_data.portals[0] == [(13, 4), (13, 10)]  # coordinates of portal id 0
     assert map_data.horse == (13, 12)
@@ -25,7 +25,7 @@ def test_parse_portal_map():
 
 def test_parse_cherry_map():
     root = Path(__file__).resolve().parents[1]
-    map_data = parse_map_file(root / "cherry_map.txt")
+    map_data = parse_map_file(root / "maps" / "cherry_map.txt")
 
     assert len(map_data.cherries) == 10
     assert map_data.horse == (7, 6)
@@ -33,7 +33,7 @@ def test_parse_cherry_map():
 
 def test_parse_2026_01_15_map():
     root = Path(__file__).resolve().parents[1]
-    map_data = parse_map_file(root / "2026.01.15_map.txt")
+    map_data = parse_map_file(root / "maps" / "2026.01.15_map.txt")
 
     assert map_data.width == 23
     assert map_data.height == 19

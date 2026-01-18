@@ -1,14 +1,14 @@
-Work plan: Let's initialize git for versioning. For now, we will do part (2) first. We will use the example_map.txt as the test bed for our solver. With 13 walls, the optimal solution has a score of 103.
+Work plan: Let's initialize git for versioning. For now, we will do part (2) first. We will use the maps/example_map.txt as the test bed for our solver. With 13 walls, the optimal solution has a score of 103.
 
 (1) Reading in the problem.  
-Parse a png input image (here, we'll test with 'example.png') into a 2d matrix, with integer values for each element identified:
+Parse a png input image (here, we'll test with 'images/example.png') into a 2d matrix, with integer values for each element identified:
 (0) water tile
 (1) grass tile
 (2) horse tile
 
 the input image is shifted and probably has a border, so we need to identify the grid that underpins the image
 
-We should test the parser against the example_map.txt to check for correctness: there the water tiles are represented by "~", the ground tiles by ".", and the horse by "H".
+We should test the parser against the maps/example_map.txt to check for correctness: there the water tiles are represented by "~", the ground tiles by ".", and the horse by "H".
 
 We should then create an adjacency graph for edge-edge neighbours consisting of grass tiles. 
 
