@@ -1,6 +1,6 @@
 # Enclose Horse Solver
 
-An integer programming solver for the [horse-enclosure puzzle](https://enclose.horse). It parses text map inputs, models the enclosure as a MILP, and can solve and visualize solutions.
+An integer programming solver for the [horse-enclosure puzzle](https://enclose.horse). It parses text map inputs, models the enclosure as a MILP, and can solve and visualize solutions. For a nice explanation of how linear programming can be used to solve this problem, check out [this blog post](https://dynomight.substack.com/p/horse) by Dynomight, who solved the problem at concurrently and independently of me!
 
 ## Installation
 
@@ -52,7 +52,7 @@ Get a solution!
 
 ![Portal solution](portal_solution.png)
 
-The horse is the brown square, walls are grey and water is blue, scoring territory is yellow while unenclosed grass is green. Cherries are ruby red, while portals are shown in different hues (purple, cyan, and crimson). 
+The horse is the brown square, walls are grey and water is blue, scoring territory is yellow while unenclosed grass is green. Cherries are ruby red, while portals are shown in different hues (purple, cyan, and crimson).
 
 ## Map format
 
