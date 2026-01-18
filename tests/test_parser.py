@@ -29,3 +29,14 @@ def test_parse_cherry_map():
 
     assert len(map_data.cherries) == 10
     assert map_data.horse == (7, 6)
+
+
+def test_parse_2026_01_15_map():
+    root = Path(__file__).resolve().parents[1]
+    map_data = parse_map_file(root / "2026.01.15_map.txt")
+
+    assert map_data.width == 23
+    assert map_data.height == 19
+    assert map_data.horse == (9, 11)
+    assert sorted(map_data.portals.keys()) == [0, 1, 2, 3, 4, 5]
+    assert all(len(coords) == 2 for coords in map_data.portals.values())

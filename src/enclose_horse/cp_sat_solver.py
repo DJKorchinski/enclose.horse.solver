@@ -96,15 +96,19 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
     adjacency = build_adjacency(map_data)
     root = map_data.horse
 
+    #okay, we're going to rewrite this function here.
+    #Optimize for 'inside' variables still
+    #require that neighbhours differ in 'inside' only if there's a wall between them
+    #this will not guarantee connectivity (things unreachable from the horse but not reaching the boundary will be 'inside')
+    #so we need a second pass flowing frmo the horse to check connectivity
+
     model = cp_model.CpModel()
     wall_vars: Dict[Coord, cp_model.IntVar] = {}
     inside_vars: Dict[Coord, cp_model.IntVar] = {}
-    order_vars: Dict[Coord, cp_model.IntVar] = {}
 
     for coord in candidates:
         wall_vars[coord] = model.NewBoolVar(f"wall_{coord[0]}_{coord[1]}")
         inside_vars[coord] = model.NewBoolVar(f"inside_{coord[0]}_{coord[1]}")
-        order_vars[coord] = model.NewIntVar(0, len(candidates), f"ord_{coord[0]}_{coord[1]}")
 
         # A tile cannot be both a wall and reachable.
         model.Add(wall_vars[coord] + inside_vars[coord] <= 1)
@@ -120,7 +124,6 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
 
     # Root is always reachable.
     model.Add(inside_vars[root] == 1)
-    model.Add(order_vars[root] == 0)
 
     # Limit on walls used.
     model.Add(sum(wall_vars.values()) <= max_walls)
@@ -136,46 +139,38 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
             model.Add(inside_vars[u] - inside_vars[v] <= wall_vars[u] + wall_vars[v])
             model.Add(inside_vars[v] - inside_vars[u] <= wall_vars[u] + wall_vars[v])
 
-    # Tree-style reachability: each reachable node (except root) must pick exactly one parent edge.
-    parent_vars: Dict[Tuple[Coord, Coord], cp_model.IntVar] = {}
-    for u in adjacency:
-        for v in adjacency[u]:
-            parent_vars[(u, v)] = model.NewBoolVar(f"p_{u}_{v}")
-            model.Add(parent_vars[(u, v)] <= inside_vars[u])
-            model.Add(parent_vars[(u, v)] <= inside_vars[v])
-            model.Add(parent_vars[(u, v)] <= 1 - wall_vars[u])
-            model.Add(parent_vars[(u, v)] <= 1 - wall_vars[v])
-
-    for v in candidates:
-        incoming = [parent_vars[(u, v)] for u in adjacency.get(v, [])]
-        if v == root:
-            for p in incoming:
-                model.Add(p == 0)
-            continue
-        if incoming:
-            model.Add(sum(incoming) == inside_vars[v])
-        else:
-            model.Add(inside_vars[v] == 0)
-        model.Add(order_vars[v] <= len(candidates) * inside_vars[v])
-        model.Add(order_vars[v] >= inside_vars[v])  # depth >=1 when reachable
-
-    big_m = len(candidates)
-    for (u, v), p in parent_vars.items():
-        model.Add(order_vars[v] >= order_vars[u] + 1 - big_m * (1 - p))
-
+            
+    #sorting for optimization 
     cherry_bonus = sum(3 * inside_vars[c] for c in map_data.cherries)
     model.Maximize(sum(inside_vars.values()) + cherry_bonus)
 
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
     assignments: Dict[Coord, Assignment] = {}
+
+
+ 
+        
+    #breadth-first search from root to count reachable 'inside' tiles
+    visited: set[Coord] = set()
+    queue = [root]
+    visited.add(root)
+    while queue:
+        current = queue.pop(0)
+        for neighbor in adjacency.get(current, []):
+            if neighbor not in visited and solver.Value(inside_vars[neighbor]) >= 1:
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+    # Now, update assignments based on reachability
     for coord in candidates:
         if solver.Value(wall_vars[coord]) >= 1:
             assignments[coord] = "wall"
-        elif solver.Value(inside_vars[coord]) >= 1:
+        elif solver.Value(inside_vars[coord]) >= 1 and coord in visited:
             assignments[coord] = "pasture"
         else:
             assignments[coord] = "grass"
 
-    objective_value = solver.ObjectiveValue() if status in (cp_model.OPTIMAL, cp_model.FEASIBLE) else None
+    objective_value = len(visited) + 3 * sum(1 for c in map_data.cherries if c in visited)
     return SolverResult(status=_status_string(status), objective=objective_value, assignments=assignments)
+

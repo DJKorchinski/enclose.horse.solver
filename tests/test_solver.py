@@ -19,7 +19,6 @@ def _assert_solver_hits_optimum(solver_fn):
     for fname, walls, objective in MAP_CASES:
         map_data = parse_map_file(ROOT / fname)
         result = solver_fn(map_data, max_walls=walls)
-
         assert result.status.lower() in {"optimal", "feasible"}
         assert round(result.objective) == objective
         assert result.walls_used() <= walls
