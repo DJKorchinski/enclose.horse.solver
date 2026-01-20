@@ -17,7 +17,7 @@ pip install -e .
 python -m enclose_horse.cli --map maps/example_map.txt --max-walls 13 --plot solution.png [--show] [--solver cp-sat|cp-sat-2]
 ```
 
-Parse and solve directly from a screenshot (requires `data/tile_color_stats.json`):
+Parse and solve directly from a screenshot (uses bundled calibration stats; override with `--calibration PATH`):
 
 ```bash
 python -m enclose_horse.cli --image images/example.png --max-walls 13 --write-map parsed.txt --solver cp-sat-2
@@ -31,7 +31,7 @@ python -m enclose_horse.cli --image images/example.png --max-walls 13 --write-ma
 - `--plot PATH`: save a rendered PNG of the solution.
 - `--show`: display the matplotlib window instead of/as well as saving.
 - `--write-map PATH`: write the parsed text map (only when using `--image`).
-- `--calibration PATH`: tile color stats for parsing screenshots (default: `data/tile_color_stats.json`).
+- `--calibration PATH`: tile color stats for parsing screenshots (default: bundled calibration stats).
 - `--solver {ilp,cp-sat,cp-sat-2}`: choose MILP, CP-SAT with flow (cp-sat), or CP-SAT with Boolean reachability (cp-sat-2, default).
 
 ## Example Solution

@@ -154,7 +154,7 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
             if neighbor not in visited and solver.Value(inside_vars[neighbor]) >= 1:
                 visited.add(neighbor)
                 queue.append(neighbor)
-
+    
     # Now, update assignments based on reachability
     for coord in candidates:
         if solver.Value(wall_vars[coord]) >= 1:

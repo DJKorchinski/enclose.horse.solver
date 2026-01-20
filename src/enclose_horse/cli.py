@@ -21,8 +21,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--calibration",
         dest="calibration_path",
-        default="data/tile_color_stats.json",
-        help="Path to saved 6D tile color statistics for image parsing.",
+        default=None,
+        help="Path to saved 6D tile color statistics for image parsing (default: bundled calibration stats).",
     )
     parser.add_argument(
         "--solver",

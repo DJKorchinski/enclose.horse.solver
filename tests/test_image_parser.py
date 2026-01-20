@@ -11,7 +11,7 @@ def test_image_parser_tolerates_small_border_offsets(tmp_path, name: str):
     root = Path(__file__).resolve().parents[1]
     img_path = root / "images" / f"{name}.png"
     ref_map = (root / "maps" / f"{name}_map.txt").read_text().strip()
-    models, scale = load_stats(root / "data/tile_color_stats.json")
+    models, scale = load_stats()
 
     img = Image.open(img_path)
     width, height = img.size

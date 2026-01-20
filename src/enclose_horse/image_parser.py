@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from importlib import resources
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
@@ -177,8 +178,21 @@ def save_stats(stats: Dict[str, List[float]], path: Path | str) -> None:
     Path(path).write_text(json.dumps(stats, indent=2))
 
 
-def load_stats(path: Path | str) -> Tuple[Dict[str, np.ndarray], np.ndarray]:
-    data = json.loads(Path(path).read_text())
+def _load_default_stats_text() -> str:
+    try:
+        return resources.files("enclose_horse").joinpath("data/tile_color_stats.json").read_text()
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(
+            "Default calibration stats not found; pass --calibration PATH or reinstall the package."
+        ) from exc
+
+
+def load_stats(path: Path | str | None = None) -> Tuple[Dict[str, np.ndarray], np.ndarray]:
+    if path is None:
+        data_text = _load_default_stats_text()
+    else:
+        data_text = Path(path).read_text()
+    data = json.loads(data_text)
     scale = np.asarray(data.get("_scale", [1.0] * 6), dtype=np.float32)
     prototypes = {k: np.asarray(v, dtype=np.float32) for k, v in data.items() if k != "_scale"}
     return prototypes, scale
