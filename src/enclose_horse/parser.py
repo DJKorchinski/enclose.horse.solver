@@ -9,6 +9,8 @@ class Tile(str, Enum):
     GRASS = "."
     HORSE = "H"
     CHERRY = "C"
+    GOLDEN_APPLE = "G"
+    BEE = "S"
     PORTAL = "P"  # placeholder value; actual id stored separately.
 
 
@@ -24,6 +26,8 @@ class MapData:
     portals: Dict[int, List[Coord]]
     portal_ids: Dict[Coord, int]
     cherries: List[Coord]
+    golden_apples: List[Coord]
+    bees: List[Coord]
 
     def neighbors(self, row: int, col: int) -> Iterable[Coord]:
         deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -49,6 +53,8 @@ def parse_map_file(path: Path | str) -> MapData:
     portals: Dict[int, List[Coord]] = {}
     portal_ids: Dict[Coord, int] = {}
     cherries: List[Coord] = []
+    golden_apples: List[Coord] = []
+    bees: List[Coord] = []
 
     for row_idx, line in enumerate(raw_lines):
         if len(line) != width:
@@ -68,6 +74,12 @@ def parse_map_file(path: Path | str) -> MapData:
             elif ch == Tile.CHERRY.value:
                 cherries.append((row_idx, col_idx))
                 row.append(Tile.CHERRY)
+            elif ch == Tile.GOLDEN_APPLE.value:
+                golden_apples.append((row_idx, col_idx))
+                row.append(Tile.GOLDEN_APPLE)
+            elif ch == Tile.BEE.value:
+                bees.append((row_idx, col_idx))
+                row.append(Tile.BEE)
             elif ch.isdigit():
                 portal_id = int(ch)
                 coord = (row_idx, col_idx)
@@ -89,4 +101,6 @@ def parse_map_file(path: Path | str) -> MapData:
         portals=portals,
         portal_ids=portal_ids,
         cherries=cherries,
+        golden_apples=golden_apples,
+        bees=bees,
     )

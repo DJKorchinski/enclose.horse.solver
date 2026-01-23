@@ -23,6 +23,13 @@ def solve_cp_sat(map_data: MapData, max_walls: int) -> SolverResult:
     candidates = candidate_tiles(map_data)
     adjacency = build_adjacency(map_data)
     root = map_data.horse
+    no_wall_coords = (
+        set(map_data.portal_ids)
+        | set(map_data.cherries)
+        | set(map_data.golden_apples)
+        | set(map_data.bees)
+        | {root}
+    )
 
     model = cp_model.CpModel()
     wall_vars: Dict[Coord, cp_model.IntVar] = {}
@@ -33,7 +40,7 @@ def solve_cp_sat(map_data: MapData, max_walls: int) -> SolverResult:
         inside_vars[coord] = model.NewBoolVar(f"inside_{coord[0]}_{coord[1]}")
         model.Add(wall_vars[coord] + inside_vars[coord] <= 1)
 
-        if coord in map_data.portal_ids or coord in map_data.cherries or coord == root:
+        if coord in no_wall_coords:
             model.Add(wall_vars[coord] == 0)
 
         r, c = coord
@@ -72,7 +79,9 @@ def solve_cp_sat(map_data: MapData, max_walls: int) -> SolverResult:
             model.Add(incoming - outgoing == inside_vars[node])
 
     cherry_bonus = sum(3 * inside_vars[c] for c in map_data.cherries)
-    model.Maximize(sum(inside_vars.values()) + cherry_bonus)
+    golden_bonus = sum(10 * inside_vars[c] for c in map_data.golden_apples)
+    bee_penalty = sum(5 * inside_vars[c] for c in map_data.bees)
+    model.Maximize(sum(inside_vars.values()) + cherry_bonus + golden_bonus - bee_penalty)
 
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
@@ -95,6 +104,13 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
     candidates = candidate_tiles(map_data)
     adjacency = build_adjacency(map_data)
     root = map_data.horse
+    no_wall_coords = (
+        set(map_data.portal_ids)
+        | set(map_data.cherries)
+        | set(map_data.golden_apples)
+        | set(map_data.bees)
+        | {root}
+    )
 
     model = cp_model.CpModel()
     wall_vars: Dict[Coord, cp_model.IntVar] = {}
@@ -108,7 +124,7 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
         model.Add(wall_vars[coord] + inside_vars[coord] <= 1)
 
         # Certain tiles cannot be walls.
-        if coord in map_data.portal_ids or coord in map_data.cherries or coord == root:
+        if coord in no_wall_coords:
             model.Add(wall_vars[coord] == 0)
 
         # Boundary tiles (except root) cannot be reachable, else the horse escapes!
@@ -136,7 +152,9 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
             
     #sorting for optimization 
     cherry_bonus = sum(3 * inside_vars[c] for c in map_data.cherries)
-    model.Maximize(sum(inside_vars.values()) + cherry_bonus)
+    golden_bonus = sum(10 * inside_vars[c] for c in map_data.golden_apples)
+    bee_penalty = sum(5 * inside_vars[c] for c in map_data.bees)
+    model.Maximize(sum(inside_vars.values()) + cherry_bonus + golden_bonus - bee_penalty)
 
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 15.0  # 15 second time limit
@@ -164,6 +182,10 @@ def solve_cp_sat_reachability(map_data: MapData, max_walls: int) -> SolverResult
         else:
             assignments[coord] = "grass"
 
-    objective_value = len(visited) + 3 * sum(1 for c in map_data.cherries if c in visited)
+    objective_value = (
+        len(visited)
+        + 3 * sum(1 for c in map_data.cherries if c in visited)
+        + 10 * sum(1 for c in map_data.golden_apples if c in visited)
+        - 5 * sum(1 for c in map_data.bees if c in visited)
+    )
     return SolverResult(status=_status_string(status), objective=objective_value, assignments=assignments)
-

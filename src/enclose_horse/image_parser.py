@@ -131,8 +131,9 @@ def _features(patch: np.ndarray) -> np.ndarray:
     return np.concatenate([mean, var])
 
 
-def calibrate_color_stats(image_path: Path | str, map_path: Path | str, crop_ratio: float = 0.6) -> Dict[str, List[float]]:
-    """Compute 6D (mean+var) color stats per tile using a labeled image and map."""
+def _collect_calibration_features(
+    image_path: Path | str, map_path: Path | str, crop_ratio: float
+) -> Dict[str, List[np.ndarray]]:
     image = _load_image(image_path)
     map_data = parse_map_file(map_path)
     grid = detect_grid(image)
@@ -158,20 +159,40 @@ def calibrate_color_stats(image_path: Path | str, map_path: Path | str, crop_rat
             else:
                 key = tile.value
             buckets.setdefault(key, []).append(feat)
+    return buckets
+
+
+def calibrate_color_stats_multi(
+    pairs: Iterable[Tuple[Path | str, Path | str]], crop_ratio: float = 0.6
+) -> Dict[str, List[float]]:
+    """Compute 6D (mean+var) color stats per tile using multiple image/map pairs."""
+    merged: Dict[str, List[np.ndarray]] = {}
+    all_feats: List[np.ndarray] = []
+    for image_path, map_path in pairs:
+        buckets = _collect_calibration_features(image_path, map_path, crop_ratio)
+        for key, feats in buckets.items():
+            merged.setdefault(key, []).extend(feats)
+            all_feats.extend(feats)
+
+    if not merged:
+        raise ValueError("No calibration pairs provided.")
 
     stats: Dict[str, List[float]] = {}
-    all_feats = []
-    for key, feats in buckets.items():
+    for key, feats in merged.items():
         mat = np.stack(feats, axis=0)
         stats[key] = mat.mean(axis=0).tolist()
-        all_feats.append(mat)
 
     # Feature-wise scale so each dimension contributes similarly.
-    stacked = np.concatenate(all_feats, axis=0)
+    stacked = np.stack(all_feats, axis=0)
     scale = stacked.std(axis=0)
     scale[scale < 1e-6] = 1e-3
     stats["_scale"] = scale.tolist()
     return stats
+
+
+def calibrate_color_stats(image_path: Path | str, map_path: Path | str, crop_ratio: float = 0.6) -> Dict[str, List[float]]:
+    """Compute 6D (mean+var) color stats per tile using a labeled image and map."""
+    return calibrate_color_stats_multi([(image_path, map_path)], crop_ratio=crop_ratio)
 
 
 def save_stats(stats: Dict[str, List[float]], path: Path | str) -> None:
@@ -248,6 +269,8 @@ def classify_image(
     portals: Dict[int, List[Tuple[int, int]]] = {}
     portal_ids: Dict[Tuple[int, int], int] = {}
     cherries: List[Tuple[int, int]] = []
+    golden_apples: List[Tuple[int, int]] = []
+    bees: List[Tuple[int, int]] = []
     horse: Tuple[int, int] | None = None
 
     for r in range(grid.rows):
@@ -260,6 +283,10 @@ def classify_image(
                 labels[r][c] = Tile.PORTAL.value
             elif label == Tile.CHERRY.value:
                 cherries.append((r, c))
+            elif label == Tile.GOLDEN_APPLE.value:
+                golden_apples.append((r, c))
+            elif label == Tile.BEE.value:
+                bees.append((r, c))
             elif label == Tile.HORSE.value:
                 horse = (r, c)
 
@@ -282,6 +309,8 @@ def classify_image(
         portals=portals,
         portal_ids=portal_ids,
         cherries=cherries,
+        golden_apples=golden_apples,
+        bees=bees,
     )
     return map_data, image
 

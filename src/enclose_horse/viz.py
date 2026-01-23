@@ -25,11 +25,17 @@ def _color_for_tile(tile: Tile, assignment: str | None, portal_id: int | None = 
         "wall": "#c0c0c0",
         "horse": "#8b4513",
         "cherry": "#ff1a1a",
+        "golden_apple": "#f2c94c",
+        "bee": "#d97706",
     }
     if tile == Tile.PORTAL and portal_id is not None:
         return _portal_color(portal_id)
     if tile == Tile.CHERRY:
         return palette["cherry"]
+    if tile == Tile.GOLDEN_APPLE:
+        return palette["golden_apple"]
+    if tile == Tile.BEE:
+        return palette["bee"]
     if tile == Tile.WATER:
         return palette["water"]
     if tile == Tile.HORSE:

@@ -5,6 +5,10 @@ Parse a png input image (here, we'll test with 'images/example.png') into a 2d m
 (0) water tile
 (1) grass tile
 (2) horse tile
+(3) cherry tile (C)
+(4) golden apple tile (G)
+(5) bee tile (S)
+(6) portal tile (0-9)
 
 the input image is shifted and probably has a border, so we need to identify the grid that underpins the image
 
@@ -23,7 +27,7 @@ Expressing the integer linear programming problem:
 ==========
 
 Objective:
-maximize 1+sum_x b_p(x)
+maximize 1+sum_x b_p(x) + 3 * sum_x b_p(x) for cherries + 10 * sum_x b_p(x) for golden apples - 5 * sum_x b_p(x) for bees
 
 Note, the +1 comes from the fact that the horse is always scored as a point, but that it will not have a corresponding set of assignment variables. 
 
@@ -60,6 +64,8 @@ maximum number of walls constraint:
 sum_x b_w(x) <= MAX_WALLS
 
 where MAX_WALLS is a user provided constraint. To start, we should set it to 13. 
+
+Walls cannot be placed on horse, portals, cherries, golden apples, or bees.
 
 ==========
 

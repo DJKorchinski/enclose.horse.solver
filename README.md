@@ -23,6 +23,12 @@ Parse and solve directly from a screenshot (uses bundled calibration stats; over
 python -m enclose_horse.cli --image images/example.png --max-walls 13 --write-map parsed.txt --solver cp-sat-2
 ```
 
+Calibrate tile color stats from all included image/map pairs (matches `images/*.png` with `maps/<stem>_map.txt`):
+
+```bash
+python -m enclose_horse.cli calibrate --output data/tile_color_stats.json --package-output src/enclose_horse/data/tile_color_stats.json
+```
+
 ### CLI options
 
 - `--map PATH`: text map file.
@@ -33,6 +39,15 @@ python -m enclose_horse.cli --image images/example.png --max-walls 13 --write-ma
 - `--write-map PATH`: write the parsed text map (only when using `--image`).
 - `--calibration PATH`: tile color stats for parsing screenshots (default: bundled calibration stats).
 - `--solver {ilp,cp-sat,cp-sat-2}`: choose MILP, CP-SAT with flow (cp-sat), or CP-SAT with Boolean reachability (cp-sat-2, default).
+- `calibrate`: subcommand to regenerate tile color stats from included images and maps.
+
+Calibrate options:
+
+- `--images-dir PATH`: directory of screenshots (default: `images`).
+- `--maps-dir PATH`: directory of map text files (default: `maps`).
+- `--output PATH`: output stats JSON (default: `data/tile_color_stats.json`).
+- `--package-output PATH`: optional extra output for packaged stats (e.g. `src/enclose_horse/data/tile_color_stats.json`).
+- `--crop-ratio FLOAT`: crop ratio for per-tile sampling (default: `0.6`).
 
 ## Example Solution
 
@@ -61,6 +76,8 @@ The horse is the brown square, walls are grey and water is blue, scoring territo
 - `H` horse (must be enclosed)
 - `0-9` portals; identical digits are linked
 - `C` cherries; yield +3 when enclosed (tile is worth 4 total)
+- `G` golden apples; yield +10 when enclosed (tile is worth 11 total)
+- `S` bees; yield -5 when enclosed (tile is worth -4 total)
 
 See `maps/example_map.txt`, `maps/portal_map.txt`, and `maps/cherry_map.txt` for reference layouts. Note that this follows the ascii map layout in the comment of the enclose.horse website.
 
@@ -72,13 +89,13 @@ See `maps/example_map.txt`, `maps/portal_map.txt`, and `maps/cherry_map.txt` for
    - `wall` (binary): wall placement (forbidden on portals/cherries/horse).
    - `inside` (binary): whether the tile is inside the enclosure (horse fixed to 1; boundary tiles forced to 0).
 4) **Constraints**:
-   - Mutually exclusive `wall + inside <= 1`.
-   - Boundary tiles cannot be inside.
-   - Portals/cherries cannot be walls; horse inside=1, wall=0.
+- Mutually exclusive `wall + inside <= 1`.
+- Boundary tiles cannot be inside.
+- Portals/cherries/golden apples/bees cannot be walls; horse inside=1, wall=0.
    - **Separation**: if two adjacent tiles differ in inside status, at least one is a wall.
    - **Connectivity**: single-commodity flow rooted at the horse; flow capacity tied to `inside` and `1 - wall`; root supplies `sum(inside)` for other inside tiles.
    - Wall budget: total walls ≤ `max-walls`.
-5) **Objective**: maximize `sum(inside)` plus `3 * inside` for cherries (horse counts via inside=1).
+5) **Objective**: maximize `sum(inside)` plus `3 * inside` for cherries, `10 * inside` for golden apples, and `-5 * inside` for bees (horse counts via inside=1).
 
 ## Testing
 

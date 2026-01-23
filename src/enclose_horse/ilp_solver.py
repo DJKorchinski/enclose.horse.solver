@@ -44,6 +44,13 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
     inside_vars: Dict[Coord, pulp.LpVariable] = {}
 
     boundary_candidates = _boundary_coords(map_data, candidates)
+    no_wall_coords = (
+        set(map_data.portal_ids)
+        | set(map_data.cherries)
+        | set(map_data.golden_apples)
+        | set(map_data.bees)
+        | {root}
+    )
 
     for r, c in candidates:
         wall_vars[(r, c)] = pulp.LpVariable(f"b_wall_{r}_{c}", lowBound=0, upBound=1, cat="Binary")
@@ -52,12 +59,8 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
         # Inside region and wall are mutually exclusive.
         problem += wall_vars[(r, c)] + inside_vars[(r, c)] <= 1
 
-        # Portals cannot be walls.
-        if (r, c) in map_data.portal_ids:
-            problem += wall_vars[(r, c)] == 0
-
-        # Cherries cannot be walls.
-        if (r, c) in map_data.cherries:
+        # Portals, cherries, golden apples, bees, and horse cannot be walls.
+        if (r, c) in no_wall_coords:
             problem += wall_vars[(r, c)] == 0
 
         # Boundary tiles cannot be part of the inside region.
@@ -68,9 +71,11 @@ def solve_ilp(map_data: MapData, max_walls: int) -> SolverResult:
     problem += inside_vars[root] == 1
     problem += wall_vars[root] == 0
 
-    # Objective: maximize inside tiles (including horse) + cherry bonuses.
+    # Objective: maximize inside tiles (including horse) + tile bonuses.
     cherry_bonus = pulp.lpSum(3 * inside_vars[(r, c)] for r, c in map_data.cherries)
-    problem += pulp.lpSum(inside_vars[(r, c)] for r, c in candidates) + cherry_bonus
+    golden_bonus = pulp.lpSum(10 * inside_vars[(r, c)] for r, c in map_data.golden_apples)
+    bee_penalty = pulp.lpSum(5 * inside_vars[(r, c)] for r, c in map_data.bees)
+    problem += pulp.lpSum(inside_vars[(r, c)] for r, c in candidates) + cherry_bonus + golden_bonus - bee_penalty
 
     # Wall budget.
     problem += pulp.lpSum(wall_vars[(r, c)] for r, c in candidates) <= max_walls

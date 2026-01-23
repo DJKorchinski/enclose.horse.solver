@@ -40,3 +40,19 @@ def test_parse_2026_01_15_map():
     assert map_data.horse == (9, 11)
     assert sorted(map_data.portals.keys()) == [0, 1, 2, 3, 4, 5]
     assert all(len(coords) == 2 for coords in map_data.portals.values())
+
+
+def test_parse_golden_map():
+    root = Path(__file__).resolve().parents[1]
+    map_data = parse_map_file(root / "maps" / "golden_map.txt")
+
+    assert map_data.golden_apples == [(1, 3)]
+    assert map_data.bees == []
+
+
+def test_parse_bee_map():
+    root = Path(__file__).resolve().parents[1]
+    map_data = parse_map_file(root / "maps" / "bee_map.txt")
+
+    assert map_data.bees == [(1, 3)]
+    assert map_data.golden_apples == []

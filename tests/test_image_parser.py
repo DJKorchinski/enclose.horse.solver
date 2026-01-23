@@ -6,7 +6,7 @@ from PIL import Image
 from enclose_horse.image_parser import classify_image, load_stats, map_to_string
 
 
-@pytest.mark.parametrize("name", ["example", "portal2", "rect", "2026.01.15"])
+@pytest.mark.parametrize("name", ["example", "portal2", "rect", "2026.01.15", "2026.01.22", "2026.01.23"])
 def test_image_parser_tolerates_small_border_offsets(tmp_path, name: str):
     root = Path(__file__).resolve().parents[1]
     img_path = root / "images" / f"{name}.png"
